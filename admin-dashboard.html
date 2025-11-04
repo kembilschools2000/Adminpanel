@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kembil Admin Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-storage-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fc;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #004aad;
+      color: white;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    nav {
+      display: flex;
+      background: #0d47a1;
+    }
+    nav button {
+      flex: 1;
+      padding: 1rem;
+      background: #0d47a1;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+    nav button:hover,
+    nav button.active {
+      background: #002171;
+    }
+    section.content {
+      padding: 2rem;
+      background: white;
+      margin: 1rem 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
+      display: none;
+    }
+    section.content.active {
+      display: block;
+    }
+    form label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    form input,
+    form select,
+    form textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    form button {
+      margin-top: 1.5rem;
+      background: #004aad;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    form button:hover {
+      background: #002171;
+    }
+    .status {
+      margin-top: 0.75rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <header>Kembil Admin Dashboard</header>
+  <nav>
+    <button class="nav-btn active" data-target="addStudent">Add New Student</button>
+    <button class="nav-btn" data-target="results">Results Handling</button>
+    <button class="nav-btn" data-target="payments">Payments</button>
+    <button class="nav-btn" data-target="announcements">Announcements</button>
+    <button class="nav-btn" data-target="studentFiles">Student Files</button>
+  </nav>
+  <section id="addStudent" class="content active">
+    <h2>Add New Student</h2>
+    <form id="addStudentForm">
+      <label>Full Name</label>
+      <input type="text" id="studentName" required />
+      <label>Class</label>
+      <select id="studentClass" required>
+        <option value="">Select Class</option>
+        <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+        <option>SS1</option><option>SS2</option><option>SS3</option>
+      </select>
+      <label>Email</label>
+      <input type="email" id="studentEmail" required />
+      <label>Password</label>
+      <input type="text" id="studentPassword" required />
+      <button type="submit">Add Student</button>
+    </form>
+    <p id="addStudentStatus" class="status"></p>
+  </section>
+  <section id="results" class="content">
+    <h2>Results Handling</h2>
+    <form id="resultsSelectorForm">
+      <label>Student Name</label>
+      <input type="text" id="resStudentName" required />
+      <label>Student Email</label>
+      <input type="email" id="resStudentEmail" required />
+      <label>Class</label>
+      <select id="resClass" required>
+        <option value="">Select Class</option>
+        <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+        <option>SS1</option><option>SS2</option><option>SS3</option>
+      </select>
+      <label>Term</label>
+      <select id="resTerm" required>
+        <option>First Term</option><option>Second Term</option><option>Third Term</option>
+      </select>
+      <label>Session</label>
+      <input type="text" id="resSession" placeholder="e.g. 2025/2026" required />
+      <button type="submit">Load Subjects</button>
+    </form>
+    <div id="resultsTableContainer" style="margin-top:20px; display:none;">
+      <table id="resultsTable" border="1" cellspacing="0" cellpadding="8" width="100%">
+        <thead style="background:#004aad;color:white;">
+          <tr><th>Subject</th><th>Score</th><th>Grade</th></tr>
+        </thead>
+        <tbody id="resultsTableBody"></tbody>
+      </table>
+      <button id="saveResultsBtn">Save Results</button>
+      <p id="resultsStatus" class="status"></p>
+    </div>
+  </section>
+  <section id="payments" class="content">
+    <h2>Payments</h2>
+    <form id="paymentsForm">
+      <label>Student Name</label>
+      <input type="text" id="payStudentName" required />
+      <label>Student Email</label>
+      <input type="email" id="payStudentEmail" required />
+      <label>Class</label>
+      <select id="payClass" required>
+        <option value="">Select Class</option>
+        <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+        <option>SS1</option><option>SS2</option><option>SS3</option>
+      </select>
+      <label>Payment Type</label>
+      <select id="payType" required>
+        <option value="">Select Payment Type</option>
+        <option>Tuition</option><option>PTA</option>
+        <option>Uniform</option><option>Exam Fee</option>
+      </select>
+      <label>Amount (₦)</label>
+      <input type="number" id="payAmount" required />
+      <label>Term</label>
+      <select id="payTerm" required>
+        <option>First Term</option><option>Second Term</option><option>Third Term</option>
+      </select>
+      <label>Session</label>
+      <input type="text" id="paySession" placeholder="2025/2026" required />
+      <button type="submit">Record Payment</button>
+    </form>
+    <p id="paymentStatus" class="status"></p>
+  </section>
+<section id="announcements" class="content">
+  <h2>Announcements</h2>
+  <form id="announcementsForm">
+    <label>Title</label>
+    <input type="text" id="announceTitle" placeholder="Enter announcement title" required />
+    
+    <label>Message</label>
+    <textarea id="announceMessage" placeholder="Write your announcement..." rows="4" required></textarea>
+    
+    <button type="submit">Post Announcement</button>
+  </form>
+  <p id="announceStatus" class="status"></p>
+
+  <h3>Recent Announcements</h3>
+  <ul id="announcementList"></ul>
+</section>
+  <section id="studentFiles" class="content">
+    <h2>Upload Student Files</h2>
+    <input type="text" id="studentFileId" placeholder="Student ID or Email" />
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">Upload File</button>
+    <h3>Uploaded Files</h3>
+    <ul id="fileList"></ul>
+  </section>
+  <script>
+    // Navigation
+    const navButtons = document.querySelectorAll("nav button.nav-btn");
+    const sections = document.querySelectorAll("section.content");
+    navButtons.forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        navButtons.forEach(b=>b.classList.remove("active"));
+        sections.forEach(s=>s.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.target).classList.add("active");
+      });
+    });
+
+    // Firebase Setup
+    const firebaseConfig = {
+      // NOTE: Replace this with your actual Firebase config
+      apiKey: "AIzaSyDtvLEYFnNmmge6WYTrlrO2BTtkqgBWYxg", 
+      authDomain: "kembil-schools.firebaseapp.com",
+      projectId: "kembil-schools",
+      storageBucket: "kembil-schools.appspot.com",
+      messagingSenderId: "897542186994",
+      appId: "1:897542186994:web:36282b2f8729065edcad6b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const storage = firebase.storage();
+
+    // Add Student
+    const addStudentForm = document.getElementById("addStudentForm");
+    const addStudentStatus = document.getElementById("addStudentStatus");
+    const studentName = document.getElementById("studentName");
+    const studentEmail = document.getElementById("studentEmail");
+    const studentPassword = document.getElementById("studentPassword");
+    const studentClass = document.getElementById("studentClass");
+
+    addStudentForm.addEventListener("submit",e=>{
+      e.preventDefault();
+      const name = studentName.value.trim();
+      const email = studentEmail.value.trim();
+      const password = studentPassword.value.trim();
+      const cls = studentClass.value;
+      if(!name || !email || !password || !cls) {
+        addStudentStatus.textContent = "❌ Please fill all fields.";
+        addStudentStatus.style.color = "red";
+        return;
+      }
+      addStudentStatus.textContent = "Creating student...";
+      auth.createUserWithEmailAndPassword(email,password)
+      .then(u => db.collection("students").doc(u.user.uid).set({
+        name, email, class: cls,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }))
+      .then(()=>{ addStudentStatus.textContent = "✅ Student created successfully!"; addStudentStatus.style.color="green"; addStudentForm.reset(); })
+      .catch(err=>{ addStudentStatus.textContent = "❌ " + err.message; addStudentStatus.style.color="red"; });
+    });
+
+    // Results Handling
+    const resultsSelectorForm = document.getElementById("resultsSelectorForm");
+    const resultsTableBody = document.getElementById("resultsTableBody");
+    const resultsTableContainer = document.getElementById("resultsTableContainer");
+    const saveResultsBtn = document.getElementById("saveResultsBtn");
+    const resultsStatus = document.getElementById("resultsStatus");
+    const resStudentName = document.getElementById("resStudentName");
+    const resStudentEmail = document.getElementById("resStudentEmail");
+    const resClass = document.getElementById("resClass");
+    const resTerm = document.getElementById("resTerm");
+    const resSession = document.getElementById("resSession");
+
+
+    const subjectsByClass = {
+      JSS1:["Mathematics","English","Basic Science","Basic Tech","Business Studies","Civic Education"],
+      JSS2:["Mathematics","English","Basic Science","Basic Tech","Business Studies","Civic Education"],
+      JSS3:["Mathematics","English","Basic Science","Basic Tech","Business Studies","Civic Education"],
+      SS1:["Maths","English","Biology","Chemistry","Physics","Economics","Government","Literature"],
+      SS2:["Maths","English","Biology","Chemistry","Physics","Economics","Government","Literature"],
+      SS3:["Maths","English","Biology","Chemistry","Physics","Economics","Government","Literature"]
+    };
+
+    // FIX 1: Move "Save Results" listener outside "Load Subjects" form submit handler.
+    // FIX 2: Correct template literal syntax for tr.innerHTML.
+    // FIX 3: Show the results table when subjects are loaded.
+
+    resultsSelectorForm.addEventListener("submit", e=>{
+      e.preventDefault();
+      const cls = resClass.value;
+      const subs = subjectsByClass[cls]||[];
+      resultsTableBody.innerHTML="";
+      resultsTableContainer.style.display="none"; // Hide initially
+
+      if(subs.length === 0) {
+        resultsStatus.textContent = "❌ Select a class with subjects.";
+        resultsStatus.style.color = "red";
+        return;
+      }
+
+      subs.forEach(s => {
+        const tr = document.createElement("tr");
+        const gradeCell = document.createElement("td");
+        gradeCell.textContent = "–";
+
+        const scoreInput = document.createElement("input");
+        scoreInput.type = "number";
+        scoreInput.min = 0;
+        scoreInput.max = 100;
+        scoreInput.classList.add("scoreInput");
+
+        // Update grade instantly when typing
+        scoreInput.addEventListener("input", () => {
+          const score = parseFloat(scoreInput.value);
+          if (isNaN(score)) {
+            gradeCell.textContent = "–";
+            return;
+          }
+          const grade =
+            score >= 70 ? "A" :
+            score >= 60 ? "B" :
+            score >= 50 ? "C" :
+            score >= 45 ? "D" :
+            score >= 40 ? "E" : "F";
+          gradeCell.textContent = grade;
+        });
+
+        // FIX 2: Corrected template literal (backticks) and appending
+        tr.innerHTML = `<td>${s}</td>`; 
+        const tdInput = document.createElement("td");
+        tdInput.appendChild(scoreInput);
+        tr.appendChild(tdInput);
+        tr.appendChild(gradeCell);
+        resultsTableBody.appendChild(tr);
+      });
+      
+      resultsStatus.textContent = "";
+      resultsTableContainer.style.display="block"; // Show the table after loading subjects
+    });
+
+    // FIX 1: Moved "Save Results" logic here.
+    saveResultsBtn.addEventListener("click", async ()=>{
+      const name = resStudentName.value.trim();
+      const email = resStudentEmail.value.trim();
+      const cls = resClass.value;
+      const term = resTerm.value;
+      const session = resSession.value.trim().replace(/\//g,"_");
+      const data = [];
+
+      if (!name || !email || !cls || !term || !resSession.value.trim()) {
+        resultsStatus.textContent = "❌ Please fill all form fields first.";
+        resultsStatus.style.color = "red";
+        return;
+      }
+
+      document.querySelectorAll(".scoreInput").forEach(i=>{
+        const subj = i.closest("tr").cells[0].textContent;
+        const score = parseFloat(i.value);
+        if(!isNaN(score)){
+          const grade = score>=70?"A":score>=60?"B":score>=50?"C":score>=45?"D":score>=40?"E":"F";
+          data.push({subject:subj,score,grade});
+        }
+      });
+      if(data.length===0){ resultsStatus.textContent="❌ Enter at least one score."; resultsStatus.style.color="red"; return; }
+      
+      resultsStatus.textContent = "Saving results...";
+      resultsStatus.style.color = "black";
+
+      try{
+        const snap = await db.collection("students").where("name","==",name).where("email","==",email).get();
+        if(snap.empty){ resultsStatus.textContent="❌ Student not found."; resultsStatus.style.color="red"; return; }
+        const uid = snap.docs[0].id;
+        await db.collection("students").doc(uid).collection("results").doc(`${session}_${term}`).set({
+          studentName: name, class: cls, term, session: resSession.value.trim(), records: data,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        resultsStatus.textContent="✅ Results saved!";
+        resultsStatus.style.color="green";
+        resultsTableContainer.style.display="none";
+        resultsSelectorForm.reset();
+      }catch(err){
+        resultsStatus.textContent="❌ " + err.message; resultsStatus.style.color="red";
+      }
+    });
+
+
+    // Payments Section
+    const paymentsForm = document.getElementById("paymentsForm");
+    const paymentStatus = document.getElementById("paymentStatus");
+    const payStudentName = document.getElementById("payStudentName");
+    const payStudentEmail = document.getElementById("payStudentEmail");
+    const payClass = document.getElementById("payClass");
+    const payType = document.getElementById("payType");
+    const payAmount = document.getElementById("payAmount");
+    const payTerm = document.getElementById("payTerm");
+    const paySession = document.getElementById("paySession");
+
+
+    paymentsForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      paymentStatus.textContent = "Processing payment...";
+      paymentStatus.style.color = "black";
+
+      const name = payStudentName.value.trim();
+      const email = payStudentEmail.value.trim();
+      const cls = payClass.value;
+      const paymentType = payType.value;
+      const amount = parseFloat(payAmount.value);
+      const term = payTerm.value;
+      const sessionRaw = paySession.value.trim();
+
+      if (!name || !email || !cls || !paymentType || !term || !sessionRaw || isNaN(amount)) {
+        paymentStatus.textContent = "❌ Please fill all fields correctly.";
+        paymentStatus.style.color = "red";
+        return;
+      }
+
+      const session = sessionRaw.replace(/\//g, "_");
+      const paymentData = {
+        studentName: name,
+        studentEmail: email,
+        class: cls,
+        paymentType,
+        amount,
+        term,
+        session: sessionRaw, // Store original format for display/queries if needed
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        const snap = await db.collection("students")
+          .where("name", "==", name)
+          .where("email", "==", email)
+          .get();
+
+        if (snap.empty) {
+          paymentStatus.textContent = "❌ Student not found. Check name and email.";
+          paymentStatus.style.color = "red";
+          return;
+        }
+
+        const uid = snap.docs[0].id;
+        await db.collection("students").doc(uid).collection("payments").add(paymentData);
+        await db.collection("payments").add({...paymentData, studentId: uid});
+
+        paymentStatus.textContent = "✅ Payment recorded and linked to student!";
+        paymentStatus.style.color = "green";
+        paymentsForm.reset();
+      } catch (err) {
+        paymentStatus.textContent = "❌ " + err.message;
+        paymentStatus.style.color = "red";
+      }
+
+    });
+
+   // Announcements Section
+const announcementsForm = document.getElementById("announcementsForm");
+const announceStatus = document.getElementById("announceStatus");
+const announceTitle = document.getElementById("announceTitle");
+const announceMessage = document.getElementById("announceMessage");
+const announcementList = document.getElementById("announcementList");
+
+announcementsForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  announceStatus.textContent = "Posting announcement...";
+  announceStatus.style.color = "black";
+
+  const title = announceTitle.value.trim();
+  const message = announceMessage.value.trim();
+
+  if (!title || !message) {
+    announceStatus.textContent = "❌ Please fill in both title and message.";
+    announceStatus.style.color = "red";
+    return;
+  }
+
+  try {
+    const announcementData = {
+      title,
+      message,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    // Save globally in announcements collection
+    await db.collection("announcements").add(announcementData);
+
+    announceStatus.textContent = "✅ Announcement posted successfully!";
+    announceStatus.style.color = "green";
+    announcementsForm.reset();
+  } catch (err) {
+    announceStatus.textContent = "❌ " + err.message;
+    announceStatus.style.color = "red";
+  }
+});
+
+// 🔹 Real-time listener to show announcements
+db.collection("announcements")
+  .orderBy("timestamp", "desc")
+  .limit(10)
+  .onSnapshot((snapshot) => {
+    announcementList.innerHTML = "";
+    if (snapshot.empty) {
+      announcementList.innerHTML = "<li>No announcements yet.</li>";
+      return;
+    }
+    snapshot.forEach((doc) => {
+      const a = doc.data();
+      const date = a.timestamp
+        ? a.timestamp.toDate().toLocaleString()
+        : "Just now";
+      const li = document.createElement("li");
+      li.style.marginBottom = "10px";
+      li.innerHTML = `
+        <strong>${a.title}</strong><br>
+        <small>${date}</small><br>
+        <p>${a.message}</p>
+      `;
+      announcementList.appendChild(li);
+    });
+  });
+
+    // Student File Upload
+    const studentFileId = document.getElementById("studentFileId");
+    const fileInput = document.getElementById("fileInput");
+    
+    // FIX 5: Corrected template literal in storage path.
+    window.uploadFile = async function() {
+      const identifier = studentFileId.value.trim();
+      const fileInputEl = fileInput;
+      if(!identifier || !fileInputEl.files.length) return alert("Provide student id/email and choose a file.");
+      const file = fileInputEl.files[0];
+      
+      // FIX 5: Corrected template literal (backticks)
+      const storageRef = storage.ref().child(`student_files/${Date.now()}_${file.name}`); 
+      
+      const uploadTask = await storageRef.put(file);
+      const url = await uploadTask.ref.getDownloadURL();
+
+      let uid = null;
+      if(identifier.includes("@")) {
+        const snap = await db.collection("students").where("email","==",identifier).get();
+        if(!snap.empty) uid = snap.docs[0].id;
+      } else {
+        const doc = await db.collection("students").doc(identifier).get();
+        if(doc.exists) uid = identifier;
+      }
+
+      if(!uid) return alert("Student not found for the provided identifier.");
+
+      await db.collection("students").doc(uid).collection("files").add({
+        name: file.name,
+        url,
+        uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      alert("File uploaded and linked to student.");
+      studentFileId.value = "";
+      fileInputEl.value = "";
+
+    };
+    
+    // Initial fetch of files (optional, but good for a complete dashboard)
+    // You may want to implement file list loading for the studentFiles section here
+    // based on the studentFileId input, or just show all files.
+    
+    // Example: Function to load files for a student (add call to this on section activation)
+    /*
+    async function loadStudentFiles(studentIdentifier) {
+        // ... (logic to find student uid as in uploadFile)
+        // ...
+        // const fileSnap = await db.collection("students").doc(uid).collection("files").get();
+        // fileList.innerHTML = "";
+        // fileSnap.forEach(doc => {
+        //    const file = doc.data();
+        //    const li = document.createElement("li");
+        //    li.innerHTML = `<a href="${file.url}" target="_blank">${file.name}</a> (Uploaded: ${file.uploadedAt.toDate().toLocaleDateString()})`;
+        //    fileList.appendChild(li);
+        // });
+    }
+    */
+    
+  </script>
+</body>
+</html>
